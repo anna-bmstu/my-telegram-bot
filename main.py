@@ -2,6 +2,7 @@ import telebot
 import wikipedia
 import re
 import requests
+from bs4 import BeautifulSoup
 from key import API_KEY
 
 # documentation for telebot
@@ -22,7 +23,7 @@ def greet(message):
 @bot.message_handler(commands=['hello'])
 def hello(message):
     bot.send_message(message.chat.id, "Hello, my friend! <3")
-    photo = open('picture.jpg', 'rb')
+    photo = open('picture.jpg', 'rb')      # my bot can send pretty pic
     bot.send_photo(message.chat.id, photo)
 
 
@@ -32,6 +33,23 @@ def start(message):
                                       "Ur virtual friend is very clever :)\n"
                                       "1. if u just type some word, i send u a lil bit "
                                       "info about it pulled from wiki\n")
+
+
+@bot.message_handler(commands=['time'])
+def handle_time(message):
+    sent = bot.send_message(message.chat.id, "entry city or country...")
+    bot.register_next_step_handler(sent, get_time)
+
+
+def get_time(message):
+    try:
+        place = message.text
+        page = requests.get('https://www.google.com/search?client=firefox-b-d&q=time+in+' + place)
+        soup = BeautifulSoup(page.text, "lxml")
+        time = soup.find_all(class_="BNeawe iBp4i AP7Wnd")[1].text
+        bot.send_message(message.chat.id, 'time in {}:  {}'.format(place, time))
+    except:
+        bot.send_message(message.chat.id, "there is no such place in the whole world, check all letters, lovely")
 
 
 wikipedia.set_lang('ru')
@@ -53,6 +71,9 @@ def get_wiki(s):
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
     bot.send_message(message.chat.id, get_wiki(message.text))
+
+
+
 
 
 # upon calling this function, TeleBot starts polling the Telegram servers for new messages
